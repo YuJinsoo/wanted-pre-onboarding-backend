@@ -3,6 +3,8 @@ from django.db import models
 
 class JobOpening(models.Model):
     company = models.ForeignKey('Company', on_delete=models.CASCADE)
+    country = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
     position = models.CharField(max_length=100)
     content = models.TextField(max_length=500)
     tech = models.CharField(max_length=100)
