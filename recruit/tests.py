@@ -4,11 +4,12 @@ from django.core.exceptions import ValidationError
 
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail
-# from rest_framework.test import APIClient
-# from rest_framework.authentication import SessionAuthentication
+from rest_framework.test import APIClient
+from rest_framework.authentication import SessionAuthentication
 
 from .serializers import JobOpeningSerializer, UpdateJobOpeningSerializer,CompanySerializer
-from .models import JobOpening, Company
+from recruit.models import JobOpening, Company
+from account.models import User
 
 class TestCase(TestCase):
     
@@ -232,4 +233,36 @@ class TestCase(TestCase):
         
         for res, expect in zip(result, expected_other):
             self.assertEqual(res, expect)
+    
+    def test_apply_JobOpening(self):
+        expected = [self.job_opening1.pk, self.job_opening2.pk]
+        expected.sort()
         
+        jo_pk = self.job_opening1.pk
+
+        user1 = User.objects.create(username="test1", password="tpxmtm1!")
+        user1.applyed.add(self.job_opening2)
+        user1.save()
+        
+        user1 = User.objects.get(pk=user1.pk)
+        
+        
+        self.client = APIClient()
+        self.client.force_authenticate(user=user1)
+        response = self.client.post(f"/recruit/jobopening/{jo_pk}/apply/",
+                                    content_type="application/json")
+        
+        user1 = User.objects.get(pk=user1.pk)
+        result = [jobopening.pk for jobopening in user1.applyed.all()]
+        result.sort()
+        
+        for res, expect in zip(result, expected):
+            self.assertEqual(res, expect)
+        
+        # 같은곳에 지원하려고 하면 실패합니다.
+        self.client = APIClient()
+        self.client.force_authenticate(user=user1)
+        response = self.client.post(f"/recruit/jobopening/{jo_pk}/apply/",
+                                    content_type="application/json")
+        
+        self.assertEqual(response.status_code, 400)

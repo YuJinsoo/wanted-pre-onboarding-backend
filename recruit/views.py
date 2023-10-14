@@ -106,3 +106,20 @@ class JobOpeningListView(APIView):
             serializer = JobOpeningSerializer(result, many=True)
             
             return Response({"message": "success get!", "data": serializer.data}, status=status.HTTP_200_OK)
+
+
+class ApplyView(APIView):
+    permission_classes = [AllowAny, ]
+    
+    def post(self, request, jo_pk):
+        user = request.user
+        job_opening = JobOpening.objects.get(pk=jo_pk)
+        
+        if job_opening in user.applyed.all():
+            return Response({"message" : "A Job Opening could be applied only once."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.applyed.add(job_opening)
+        serializer = JobOpeningSerializer(job_opening)
+        
+        return Response({"message": "success to apply", "data":serializer.data}, status=status.HTTP_200_OK)
+        
